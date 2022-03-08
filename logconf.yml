@@ -1,0 +1,22 @@
+version: 1
+disable_existing_loggers: False
+
+handlers:
+  console:
+    level: NOTSET
+    class: logging.StreamHandler
+    formatter: colored
+
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: NOTSET
+    formatter: plain
+    filename: log/rcoords.log
+    maxBytes: 10485760 # 10MB
+    backupCount: 20
+    encoding: utf8
+
+root:
+  level: NOTSET
+  handlers: [console, file, file_json]
+  propagate: True

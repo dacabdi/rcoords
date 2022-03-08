@@ -1,0 +1,168 @@
+[MASTER]
+
+jobs=1
+limit-inference-results=100
+persistent=yes
+suggestion-mode=yes
+unsafe-load-any-extension=no
+extension-pkg-allow-list=pillow,PIL
+
+[MESSAGES CONTROL]
+
+enable=c-extension-no-member
+
+[REPORTS]
+
+evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+output-format=colorized
+reports=yes
+score=yes
+
+[REFACTORING]
+
+max-nested-blocks=5
+never-returning-functions=sys.exit
+
+[BASIC]
+
+bad-names=foo,
+          bar,
+          baz,
+          toto,
+          tutu,
+          tata
+
+good-names=i,
+           j,
+           k,
+           ex,
+           Run,
+           _
+
+argument-naming-style=snake_case
+attr-naming-style=snake_case
+class-attribute-naming-style=any
+class-naming-style=PascalCase
+const-naming-style=UPPER_CASE
+docstring-min-length=-1
+function-naming-style=snake_case
+include-naming-hint=yes
+inlinevar-naming-style=any
+method-naming-style=snake_case
+module-naming-style=snake_case
+no-docstring-rgx=^_
+property-classes=abc.abstractproperty
+variable-naming-style=snake_case
+
+[FORMAT]
+
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+indent-after-paren=4
+indent-string='    '
+max-line-length=100
+max-module-lines=1000
+no-space-check=trailing-comma,
+               dict-separator
+single-line-class-stmt=no
+single-line-if-stmt=no
+
+[LOGGING]
+
+logging-format-style=new
+logging-modules=logging
+
+[MISCELLANEOUS]
+
+notes=FIXME,
+      XXX
+
+[SIMILARITIES]
+
+# TODO fix this
+ignore-comments=no
+ignore-docstrings=no
+ignore-imports=no
+min-similarity-lines=20
+
+[SPELLING]
+
+max-spelling-suggestions=4
+spelling-dict=
+spelling-ignore-words=
+spelling-private-dict-file=
+spelling-store-unknown-words=no
+
+[STRING]
+
+check-str-concat-over-line-jumps=no
+
+[TYPECHECK]
+
+contextmanager-decorators=contextlib.contextmanager
+generated-members=
+ignore-mixin-members=yes
+ignore-none=yes
+ignore-on-opaque-inference=yes
+ignored-classes=optparse.Values,thread._local,_thread._local
+ignored-modules=
+missing-member-hint=yes
+missing-member-hint-distance=1
+missing-member-max-choices=1
+signature-mutators=
+
+[VARIABLES]
+
+additional-builtins=
+allow-global-unused-variables=yes
+
+callbacks=cb_,
+          _cb
+
+dummy-variables-rgx=_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_
+ignored-argument-names=_.*|^ignored_|^unused_
+init-import=no
+redefining-builtins-modules=six.moves,past.builtins,future.builtins,builtins,io
+
+[CLASSES]
+
+defining-attr-methods=__init__,
+                      __new__,
+                      setUp,
+                      __post_init__
+
+exclude-protected=_asdict,
+                  _fields,
+                  _replace,
+                  _source,
+                  _make
+
+valid-classmethod-first-arg=cls
+valid-metaclass-classmethod-first-arg=cls
+
+[DESIGN]
+
+max-args=5
+max-attributes=7
+max-bool-expr=5
+max-branches=12
+max-locals=15
+max-parents=7
+max-public-methods=20
+max-returns=6
+max-statements=50
+min-public-methods=1
+
+[IMPORTS]
+
+allow-any-import-level=
+allow-wildcard-with-all=no
+analyse-fallback-blocks=no
+deprecated-modules=optparse,tkinter.tix
+known-standard-library=
+known-third-party=enchant
+preferred-modules=
+
+[EXCEPTIONS]
+
+overgeneral-exceptions=BaseException,
+                       Exception

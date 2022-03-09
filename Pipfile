@@ -11,6 +11,7 @@ configargparse = "*"
 aiofiles = "*"
 httpx = "*"
 aiocsv = "*"
+humanize = "*"
 
 [dev-packages]
 pylint = "*"

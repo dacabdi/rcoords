@@ -1,6 +1,5 @@
 '''rcoords execution module'''
 
-from dataclasses import field
 import logging
 import logging.config
 import structlog
@@ -10,15 +9,17 @@ import yaml
 import os
 import aiofiles
 import httpx
+import pprint
 
-from aiocsv import AsyncReader
+from dataclasses import field
+from aiocsv import AsyncDictReader
 
 from .config import setup_configparser
 from .evlogger import BoundLoggerEvents
 from .events import AppEvent
 from .client import BingClient, GoogleClient, PtvClient
 from .providers import GenericProvider
-from .parsers import BingRespParser, GoogleRespParser, PlainReqParser, PtvRespParser
+from .parsers import AddressRecordParser, BingRespParser, GoogleRespParser, PlainReqParser, PtvRespParser
 
 logger = structlog.get_logger('rcoords')
 
@@ -35,26 +36,30 @@ async def main_async():
     logger.debug(AppEvent(f"Configuration loaded: '{str(vars(config))}'"))
     logger.debug(AppEvent(f"Current working directory: '{str(os.getcwd())}'"))
 
-    # create and run module
-    '''
-    async with aiofiles.open(config.csv, mode='r') as f:
-        i = 0
-        async for line in f:
-            line = line.rstrip()
-            logger.debug(AppEvent(f"line {i}: '{line}'"))
-            i = i + 1
-    '''
-
-    async with httpx.AsyncClient() as http_client, aiofiles.open(config.csv, mode='r') as csv:
+    printer = pprint.PrettyPrinter(indent=4, sort_dicts=True, compact=False)
+    results = {}
+    address_parser = AddressRecordParser() # using default mappings
+    async with httpx.AsyncClient() as http_client, aiofiles.open(config.csv, mode='r', encoding='utf-8') as csv:
         providers = create_providers(config, http_client)
-        addresses = ['7601 159th Pl NE, Redmond, WA 98052']
-        for address in addresses:
-            logger.info(AppEvent(f"Resolving address: '{address}'"))
-            result = []
+        async for row in AsyncDictReader(csv, delimiter=','):
+            id = row['ID']
+            address = str(address_parser.parse(row))
+            logger.info(AppEvent(f"Resolving address: '{address}', normalized from '{row}'"))
+            locations = {}
+            coords = []
             for provider in providers:
-                result += await provider.query(address)
-                logger.info(AppEvent(f"'{provider.tag}' reported: '{result}'"))
-            print(result)
+                tag = provider.tag
+                try:
+                    prov_results = await provider.query(address)
+                    locations[tag] = [] if len(prov_results) is 0 else prov_results[0]
+                    coords.append(locations[tag]) # TODO ugh, improve this
+                except Exception as e:
+                    logger.warn(AppEvent(f"Provider '{tag}' failed to resolve '{address}'"))
+                logger.info(AppEvent(f"'{tag}' reported: '{locations[tag]}'"))
+            results[id] = {'id': id}
+            results[id]['locations'] = locations
+            results[id]['max_distance'] = top_distance(coords)
+    printer.pprint(results)
 
     return 0
 
@@ -147,5 +152,13 @@ def create_providers(config, http_client):
         providers.append(bing_provider)
 
     return providers
+
+def top_distance(coords):
+    distances = []
+    for c1 in coords:
+        for c2 in coords:
+            distances.append(c1.distance(c2))
+    distances = sorted(distances, reverse=True)
+    return distances[0] if len(distances) else [0]
 
 main()

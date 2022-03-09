@@ -2,11 +2,12 @@
 provider based request and response parsers
 '''
 import json
+import humanize
 
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-from .models import Coordinate
+from .models import Address, Coordinate
 
 class IReqParser(ABC):
     '''
@@ -29,6 +30,37 @@ class IRespParser(ABC):
         '''
         parses a provider response into a list of coordinates
         '''
+
+class AddressRecordParser():
+
+    def __init__(self, fields=None):
+        self._fields = fields if fields else {
+            'number' : 'Location No',
+            'quadrant' : 'Quadrant',
+            'street' : 'Street Number/Street Name',
+            'street_class' : 'Street Id',
+            'city' : 'Locality',
+            'state' : 'State',
+            'postal' : 'Zip Code',}
+
+    def parse(self, record):
+        address = Address()
+        number = record[self._fields['number']]
+        address.number = number if number != '0' else ''
+        address.quadrant = record[self._fields['quadrant']]
+        address.street = self._parse_street(record[self._fields['street']])
+        address.street_class = record[self._fields['street_class']]
+        address.city = record[self._fields['city']]
+        address.state = record[self._fields['state']]
+        # TODO break down 9 digits postal codes
+        address.postal = record[self._fields['postal']]
+        return address
+
+    @staticmethod
+    def _parse_street(street):
+        if street.isdecimal():
+            return humanize.ordinal(street)
+        return street
 
 class PlainReqParser(IReqParser):
     '''

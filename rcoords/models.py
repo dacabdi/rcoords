@@ -13,14 +13,23 @@ class Address:
     model for address
     '''
     number: str = ''
+    quadrant: str = ''
     street: str = ''
+    street_class: str = ''
     city: str = ''
     postal: str = ''
     state: str = ''
     country: str = 'United States'
 
     def __str__(self) -> str:
-        return f'{self.number} {self.street}, {self.city}, {self.state} {self.postal}'
+        leading = ' '.join([
+            field for field in [
+            self.number,
+            self.quadrant,
+            self.street,
+            self.street_class]
+            if field != ''])
+        return f"{leading}, {self.city}, {self.state} {self.postal}"
 
 @dataclass
 class Coordinate:
@@ -36,7 +45,7 @@ class Coordinate:
           + (self.longitude - other.longitude) ** 2)
 
     def __str__(self) -> str:
-        return f'(lat={self.latitude}, lon={self.longitude})'
+        return f'{self.latitude}, {self.longitude}'
 
     def __repr__(self) -> str:
         return str(self)

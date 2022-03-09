@@ -10,7 +10,7 @@
             "request": "launch",
             "module": "rcoords",
             "justMyCode": true,
-            "args": ["--csv", "./data/sample.csv"]
+            "args": []
         }
     ]
 }

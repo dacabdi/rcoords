@@ -5,9 +5,17 @@ name = "pypi"
 
 [packages]
 xmlrunner = "*"
+structlog = "*"
+pyyaml = "*"
+configargparse = "*"
+aiofiles = "*"
+httpx = "*"
+aiocsv = "*"
 
 [dev-packages]
 pylint = "*"
+asynctest = "*"
+ddt = "*"
 
 [requires]
 python_version = "3.10"

@@ -1,0 +1,24 @@
+{
+    "cSpell.words": [
+        "aiofiles",
+        "bingclient",
+        "evlogger",
+        "gclient",
+        "gprovider",
+        "httpx",
+        "myptv",
+        "rcoords",
+        "rset",
+        "subdirs"
+    ],
+    "python.linting.enabled": true,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./test",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true
+}

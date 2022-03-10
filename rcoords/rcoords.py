@@ -86,7 +86,7 @@ class RCoords:
                     result = await provider.query(address)
                     result = None if len(result) == 0 else result[0]
                 except Exception as e:
-                    logger.warn(AppEvent(f"Provider '{tag}' failed to resolve '{address}'"))
+                    logger.warn(AppEvent(f"Provider '{tag}' failed to resolve '{address}' with exception {e}"))
                 logger.info(AppEvent(f"'{tag}' reported: '{result}'"))
                 self._store.set_result(id, tag, result)
             else:

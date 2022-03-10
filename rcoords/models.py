@@ -4,7 +4,9 @@ data models
 
 from __future__ import annotations # resolve class self reference
 
+import csv
 import math
+
 from dataclasses import dataclass
 
 @dataclass
@@ -46,6 +48,97 @@ class Coordinate:
 
     def __str__(self) -> str:
         return f'{self.latitude}, {self.longitude}'
+
+    def __repr__(self) -> str:
+        return str(self)
+
+class Store:
+    '''
+    data store for results
+    '''
+
+    RESULTS_KEY = 'results'
+    DISCREPANCY_KEY = 'discrepancy'
+    ID_KEY = 'id'
+    NON_PROVIDER_FIELDS = set([ID_KEY, RESULTS_KEY, DISCREPANCY_KEY])
+
+    def __init__(self, data=None):
+        self._data = data if data else {}
+        self._providers = set()
+
+    @classmethod
+    def from_file(cls, file):
+        '''
+        creates a data store by reading a csv file
+        the header of the csv file is expected to be
+        (id, discrepancy, Provider1_lat, Provider1_lon, ..., ProviderN_lat, ProviderN_lon)
+        '''
+        store = Store()
+        reader = csv.DictReader(file)
+        for entry in reader:
+            # TODO this whole parser is extremely fragile, improve this
+            id = entry[cls.ID_KEY]
+            pks = sorted(list(entry.keys() - cls.NON_PROVIDER_FIELDS))
+            pks = [(pks[i], pks[i+1]) for i in range(0, len(pks), 2)]
+            for pk in pks:
+                tag = pk[0][:pk[0].index("_")]
+                lat = entry[f'{tag}_lat']
+                lon = entry[f'{tag}_lon']
+                if lat != 'None' and lon != 'None':
+                    coord = Coordinate(latitude=float(lat), longitude=float(lon))
+                else:
+                    coord = None
+                store.set_result(id, tag, coord)
+        return store
+
+    def set_result(self, id, provider_tag: str, result=None):
+        self._providers.add(provider_tag)
+        entry = self._mint_entry(id)
+        entry[self.RESULTS_KEY][provider_tag] = result
+        self._update_discrepancy(entry)
+
+    def get_result(self, id, provider_tag=None):
+        if id in self._data.keys():
+            results = self._data[id][self.RESULTS_KEY]
+            if not provider_tag:
+                return results
+            if provider_tag in results.keys():
+                return results[provider_tag]
+        return None
+
+    def _mint_entry(self, id):
+        if id not in self._data.keys():
+            self._data[id] = {
+                self.ID_KEY: id,
+                self.DISCREPANCY_KEY: 0,
+                self.RESULTS_KEY: {} }
+        return self._data[id]
+
+    def _update_discrepancy(self, entry):
+        coords = entry[self.RESULTS_KEY].values()
+        discrepancies = sorted([i.distance(j) for i in coords if i for j in coords if j and i != j], reverse=True)
+        entry[self.DISCREPANCY_KEY] = 0 if len(discrepancies) == 0 else discrepancies[0]
+
+    def __str__(self) -> str:
+        '''
+        serializes the store into a csv with header
+        (id, discrepancy, Provider1_lat, Provider1_lon, ..., ProviderN_lat, ProviderN_lon)
+        '''
+        header = ','.join([self.ID_KEY, self.DISCREPANCY_KEY] + [f'{p}_lat,{p}_lon' for p in sorted(self._providers)])
+        result = [header]
+        for id, v in self._data.items():
+            line = [id, str(v[self.DISCREPANCY_KEY])]
+            for prov in sorted(self._providers):
+                if prov in v[self.RESULTS_KEY].keys():
+                    r = v[self.RESULTS_KEY][prov]
+                    if r is None:
+                        line += ['None', 'None']
+                    else:
+                        line += [str(r.latitude), str(r.longitude)]
+                else:
+                    line += ['None', 'None']
+            result.append(','.join(line))
+        return '\n'.join(result)
 
     def __repr__(self) -> str:
         return str(self)

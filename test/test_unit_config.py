@@ -14,9 +14,10 @@ class test_Config(unittest.TestCase):
 
     def test_config_required_and_defaults(self):
         parser = setup_configparser()
-        config = parser.parse('--csv somefile.csv')
+        config = parser.parse('--csv somefile.csv --store output.csv')
         # required
         self.assertEqual(config.csv, 'somefile.csv')
+        self.assertEqual(config.store, 'output.csv')
         # defaults
         self.assertEqual(config.logconf, 'logconf.yml')
 
@@ -24,6 +25,7 @@ class test_Config(unittest.TestCase):
         parser = setup_configparser()
         config = parser.parse(' '.join([
             '--csv somefile.csv',
+            '--store output.csv',
             '--logconf configlog.yml',
             ]), config_file_contents='')
         self.assertEqual(config.csv, 'somefile.csv')

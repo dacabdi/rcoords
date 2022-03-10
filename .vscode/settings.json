@@ -9,6 +9,7 @@
         "httpx",
         "myptv",
         "rcoords",
+        "recalc",
         "rset",
         "subdirs"
     ],

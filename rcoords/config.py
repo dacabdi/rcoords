@@ -9,9 +9,18 @@ def setup_configparser() -> configargparse.ArgumentParser:
         add_config_file_help=False,)
     parser.add('--config', metavar='FILE', default='rcoords.conf', dest='config',
         is_config_file=True, env_var='RCOORDS_CONFIG', help='config file path')
-    # input
+    # input/output
     parser.add('--csv', dest='csv', type=str, required=True,
         help='input csv file to resolve locations')
+    parser.add('--store', dest='store', type=str, required=True,
+        help='output csv file to resolve locations')
+    parser.add('--preload', dest='preload', action='store_true',
+        help='preload output file to avoid resolving already done addresses')
+    # timing
+    parser.add('--burst-size', default=20, dest='burst_size', type=int,
+        help='size/length of a burst of requests')
+    parser.add('--cooldown-ms', default=500, dest='cooldown_ms', type=int,
+        help='milliseconds to wait between bursts')
     # providers
     parser.add('--google-apikey', dest='google_apikey', type=str,
         help='google api key')

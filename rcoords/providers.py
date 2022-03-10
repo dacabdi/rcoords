@@ -20,12 +20,19 @@ class IProvider(ABC):
         obtains the coordinates for an address
         '''
 
+    @property
+    @abstractmethod
+    def tag(self) -> str:
+        '''
+        tags providers
+        '''
+
 class GenericProvider(IProvider):
     '''
     location provider based
     '''
 
-    def __init__(self, client: IClient, req_parser: IReqParser, resp_parser: IRespParser, tag='Generic'):
+    def __init__(self, client: IClient, req_parser: IReqParser, resp_parser: IRespParser, tag: str):
         self._client = client
         self._req_parser = req_parser
         self._resp_parser = resp_parser

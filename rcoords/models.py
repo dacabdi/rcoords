@@ -6,6 +6,7 @@ from __future__ import annotations # resolve class self reference
 
 import csv
 import math
+from typing import List
 
 from dataclasses import dataclass
 
@@ -52,6 +53,25 @@ class Coordinate:
     def __repr__(self) -> str:
         return str(self)
 
+@dataclass
+class CoordsAndAddrs:
+    '''
+    model for CoordsAndAddrs
+    '''
+    address: str
+    coords: Coordinate
+
+    def distance(self, other: CoordsAndAddrs) -> float:
+        return math.sqrt(
+            (self.coords.latitude  - other.coords.latitude ) ** 2
+          + (self.coords.longitude - other.coords.longitude) ** 2)
+
+    def __str__(self) -> str:
+        return f'{self.coords.latitude}, {self.coords.longitude}'
+
+    def __repr__(self) -> str:
+        return str(self)
+
 class Store:
     '''
     data store for results
@@ -59,8 +79,9 @@ class Store:
 
     RESULTS_KEY = 'results'
     DISCREPANCY_KEY = 'discrepancy'
+    ADDRESS_KEY = 'address'
     ID_KEY = 'id'
-    NON_PROVIDER_FIELDS = set([ID_KEY, RESULTS_KEY, DISCREPANCY_KEY])
+    NON_PROVIDER_FIELDS = set([ID_KEY, ADDRESS_KEY, RESULTS_KEY, DISCREPANCY_KEY])
 
     def __init__(self, data=None):
         self._data = data if data else {}
@@ -71,7 +92,7 @@ class Store:
         '''
         creates a data store by reading a csv file
         the header of the csv file is expected to be
-        (id, discrepancy, Provider1_lat, Provider1_lon, ..., ProviderN_lat, ProviderN_lon)
+        (id, address, discrepancy, Provider1_lat, Provider1_lon, ..., ProviderN_lat, ProviderN_lon)
         '''
         store = Store()
         reader = csv.DictReader(file)
@@ -85,7 +106,7 @@ class Store:
                 lat = entry[f'{tag}_lat']
                 lon = entry[f'{tag}_lon']
                 if lat != 'None' and lon != 'None':
-                    coord = Coordinate(latitude=float(lat), longitude=float(lon))
+                    coord = CoordsAndAddrs(address=entry[cls.ADDRESS_KEY], coords=Coordinate(latitude=float(lat), longitude=float(lon)))
                 else:
                     coord = None
                 store.set_result(id, tag, coord)
@@ -94,22 +115,26 @@ class Store:
     def set_result(self, id, provider_tag: str, result=None):
         self._providers.add(provider_tag)
         entry = self._mint_entry(id)
-        entry[self.RESULTS_KEY][provider_tag] = result
+        if result != None:
+            entry[self.ADDRESS_KEY] = result.address
+            entry[self.RESULTS_KEY][provider_tag] = result.coords
         self._update_discrepancy(entry)
 
     def get_result(self, id, provider_tag=None):
         if id in self._data.keys():
             results = self._data[id][self.RESULTS_KEY]
             if not provider_tag:
-                return results
+                return [CoordsAndAddrs(address=self._data[id][self.ADDRESS_KEY], coords=results[provider_tag]) for provider_tag in results.keys()]
             if provider_tag in results.keys():
-                return results[provider_tag]
+                return CoordsAndAddrs(address=self._data[id][self.ADDRESS_KEY], coords=results[provider_tag])
         return None
+
 
     def _mint_entry(self, id):
         if id not in self._data.keys():
             self._data[id] = {
                 self.ID_KEY: id,
+                self.ADDRESS_KEY: '',
                 self.DISCREPANCY_KEY: 0,
                 self.RESULTS_KEY: {} }
         return self._data[id]
@@ -124,10 +149,10 @@ class Store:
         serializes the store into a csv with header
         (id, discrepancy, Provider1_lat, Provider1_lon, ..., ProviderN_lat, ProviderN_lon)
         '''
-        header = ','.join([self.ID_KEY, self.DISCREPANCY_KEY] + [f'{p}_lat,{p}_lon' for p in sorted(self._providers)])
+        header = ','.join([self.ID_KEY, self.ADDRESS_KEY, self.DISCREPANCY_KEY] + [f'{p}_lat,{p}_lon' for p in sorted(self._providers)])
         result = [header]
         for id, v in self._data.items():
-            line = [id, str(v[self.DISCREPANCY_KEY])]
+            line = [id, str('"' + v[self.ADDRESS_KEY] + '"'), str(v[self.DISCREPANCY_KEY])]
             for prov in sorted(self._providers):
                 if prov in v[self.RESULTS_KEY].keys():
                     r = v[self.RESULTS_KEY][prov]

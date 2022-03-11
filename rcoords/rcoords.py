@@ -5,6 +5,7 @@ rcoords program module facade
 import asyncio
 import signal
 import sys
+import traceback
 import httpx
 import structlog
 import aiofiles
@@ -19,6 +20,7 @@ from .events import AppEvent
 from .client import BingClient, GoogleClient, PtvClient
 from .providers import GenericProvider
 from .parsers import AddressRecordParser, BingRespParser, GoogleRespParser, PlainReqParser, PtvRespParser
+from .verifiers import GenericRespVerifier
 
 logger = structlog.get_logger('rcoords')
 
@@ -86,7 +88,8 @@ class RCoords:
                     result = await provider.query(address)
                     result = None if len(result) == 0 else result[0]
                 except Exception as e:
-                    logger.warn(AppEvent(f"Provider '{tag}' failed to resolve '{address}' with exception {e}"))
+                    logger.warn(AppEvent(f"Provider '{tag}' failed to resolve '{address}' with exception '{repr(e)}'"))
+                    traceback.print_exc()
                 logger.info(AppEvent(f"'{tag}' reported: '{result}'"))
                 self._store.set_result(id, tag, result)
             else:
@@ -106,21 +109,24 @@ class RCoords:
             ptv_client = PtvClient(self._http_client, apikey=self._config.ptv_apikey)
             ptv_req_parser = PlainReqParser(field_name='searchText', common={'countryFilter':'US'})
             ptv_res_parser = PtvRespParser()
-            ptv_provider = GenericProvider(ptv_client, ptv_req_parser, ptv_res_parser, tag='PTV')
+            ptv_res_verifier = GenericRespVerifier('PTV')
+            ptv_provider = GenericProvider(ptv_client, ptv_req_parser, ptv_res_verifier, ptv_res_parser, tag='PTV')
             providers.append(ptv_provider)
 
         if self._config.use_google:
             gclient = GoogleClient(self._http_client, apikey=self._config.google_apikey)
             gclient_req_parser = PlainReqParser(field_name='address')
+            gclient_res_verifier = GenericRespVerifier('Google')
             gclient_res_parser = GoogleRespParser()
-            gprovider = GenericProvider(gclient, gclient_req_parser, gclient_res_parser, tag='Google')
+            gprovider = GenericProvider(gclient, gclient_req_parser, gclient_res_verifier, gclient_res_parser, tag='Google')
             providers.append(gprovider)
 
         if self._config.use_bing:
             bing_client = BingClient(self._http_client, apikey=self._config.bing_apikey)
             bing_req_parser = PlainReqParser(field_name='q')
+            bing_res_verifier = GenericRespVerifier('Bing')
             bing_res_parser = BingRespParser()
-            bing_provider = GenericProvider(bing_client, bing_req_parser, bing_res_parser, tag='Bing')
+            bing_provider = GenericProvider(bing_client, bing_req_parser, bing_res_verifier, bing_res_parser, tag='Bing')
             providers.append(bing_provider)
 
         return providers

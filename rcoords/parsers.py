@@ -7,7 +7,7 @@ import humanize
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-from .models import Address, Coordinate
+from .models import Address, Coordinate, CoordsAndAddrs
 
 class IReqParser(ABC):
     '''
@@ -26,7 +26,7 @@ class IRespParser(ABC):
     '''
 
     @abstractmethod
-    def parse(self, response) -> List[Coordinate]:
+    def parse(self, response) -> List[CoordsAndAddrs]:
         '''
         parses a provider response into a list of coordinates
         '''
@@ -53,7 +53,7 @@ class AddressRecordParser():
         address.city = record[self._fields['city']]
         address.state = record[self._fields['state']]
         # TODO break down 9 digits postal codes
-        address.postal = record[self._fields['postal']]
+        address.postal = record[self._fields['postal']][0:5]
         return address
 
     @staticmethod
@@ -79,29 +79,29 @@ class PlainReqParser(IReqParser):
 
 class PtvRespParser(IRespParser):
 
-    def parse(self, response) -> List[Coordinate]:
+    def parse(self, response) -> List[CoordsAndAddrs]:
         '''
         parses a provider response into a list of coordinates
         '''
         # TODO clean up
         response = json.loads(response)
         locations = sorted(response['locations'], key=lambda d: d['quality']['totalScore'], reverse=True)
-        return [Coordinate(latitude=loc['referencePosition']['latitude'], longitude=loc['referencePosition']['longitude']) for loc in locations]
+        return [CoordsAndAddrs(address=loc['formattedAddress'], coords=Coordinate(latitude=loc['referencePosition']['latitude'], longitude=loc['referencePosition']['longitude'])) for loc in locations]
 
 class GoogleRespParser(IRespParser):
 
-    def parse(self, response) -> List[Coordinate]:
+    def parse(self, response) -> List[CoordsAndAddrs]:
         '''
         parses a provider response into a list of coordinates
         '''
         # TODO clean up
         response = json.loads(response)
         results = response['results']
-        return [Coordinate(latitude=r['geometry']['location']['lat'], longitude=r['geometry']['location']['lng']) for r in results]
+        return [CoordsAndAddrs(address=r['formatted_address'], coords=Coordinate(latitude=r['geometry']['location']['lat'], longitude=r['geometry']['location']['lng'])) for r in results]
 
 class BingRespParser(IRespParser):
 
-    def parse(self, response) -> List[Coordinate]:
+    def parse(self, response) -> List[CoordsAndAddrs]:
         '''
         parses a provider response into a list of coordinates
         '''
@@ -111,5 +111,5 @@ class BingRespParser(IRespParser):
         for rset in response['resourceSets']:
             for resource in rset['resources']:
                 coord = resource['point']['coordinates']
-                result.append(Coordinate(latitude=coord[0], longitude=coord[1]))
+                result.append(CoordsAndAddrs(address=resource['address']['formattedAddress'], coords=Coordinate(latitude=coord[0], longitude=coord[1])))
         return result
